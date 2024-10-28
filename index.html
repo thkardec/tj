@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Cadastro</title>
+</head>
+<body>
+    <h1>Formulário de Cadastro</h1>
+    <form id="meuFormulario">
+        <input type="text" id="nome" placeholder="Nome" required>
+        <input type="number" id="idade" placeholder="Idade" required>
+        <select id="sexo" required>
+            <option value="">Selecione o Sexo</option>
+            <option value="masculino">Masculino</option>
+            <option value="feminino">Feminino</option>
+        </select>
+        <button type="submit">Enviar</button>
+    </form>
+    <script>
+        document.getElementById("meuFormulario").addEventListener("submit", function(event) {
+            event.preventDefault(); // Previne o comportamento padrão do formulário
+
+            const nome = document.getElementById("nome").value;
+            const idade = document.getElementById("idade").value;
+            const sexo = document.getElementById("sexo").value;
+
+            fetch("https://script.google.com/macros/s/AKfycbyBTq6xAnPZBseuJFjg235hla5xXA4cK73pAuqBPoZsug0XNBayAaPBCp5jU6jy-rrjPA/exec", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ nome, idade, sexo })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("Dados enviados com sucesso!");
+                    document.getElementById("meuFormulario").reset(); // Limpa o formulário
+                } else {
+                    alert("Erro ao enviar dados.");
+                }
+            })
+            .catch((error) => {
+                console.error("Erro:", error);
+                alert("Erro ao enviar dados.");
+            });
+        });
+    </script>
+</body>
+</html>
