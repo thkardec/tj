@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Financeiro</title>
+    <style>
+        /* Reset de margens e padding */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Container principal */
+        .container {
+            width: 100%;
+            height: 100%;
+            max-width: 600px;  /* Aumentei o máximo da largura para desktop */
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        /* Bloco de informação */
+        .info-block {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px; /* Aumentei o padding para dar mais espaço aos itens */
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 1.5em; /* Fonte maior para a versão desktop */
+            color: #333;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .info-block:hover {
+            transform: scale(1.05);
+            cursor: pointer;
+        }
+
+        /* Ícones e cores */
+        .receita {
+            border-left: 5px solid #28a745;
+            color: #28a745;
+        }
+
+        .despesa {
+            border-left: 5px solid #a72828;
+            color: #a72828;
+        }
+
+        .soma {
+            border-top: 5px solid #063161;
+        }
+
+        .info-icon {
+            font-size: 2.5em; /* Aumentei o tamanho do ícone para desktop */
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsividade */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+                max-width: 100%; /* Faz o container ocupar toda a tela */
+            }
+
+            .info-block {
+                font-size: 1.2em; /* Fonte menor em dispositivos móveis */
+                padding: 12px;
+                flex-direction: column;  /* Ajusta o layout para coluna no mobile */
+                text-align: center; /* Centraliza o texto no mobile */
+            }
+
+            .info-icon {
+                font-size: 2em;
+                padding: 12px;
+            }
+
+            .info-block span {
+                display: block; /* Faz os itens ficarem em blocos no mobile */
+                margin-bottom: 8px;
+            }
+
+            .info-block.soma {
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Bloco de Receita -->
+        <div class="info-block receita" id="receitaBlock">
+            <span class="info-icon">📉</span>
+            <span>Receita:</span>
+            <span id="totalReceitas">R$ 0,00</span>
+        </div>
+
+        <!-- Bloco de Despesa -->
+        <div class="info-block despesa" id="despesaBlock">
+            <span class="info-icon">📈</span>
+            <span>Despesas:</span>
+            <span id="totalDespesas">R$ 0,00</span>
+        </div>
+
+        <!-- Bloco de Total -->
+        <div class="info-block soma" id="totalBlock">
+            <span class="info-icon">📊</span>
+            <span>Total:</span>
+            <span id="totalSoma">R$ 0,00</span>
+        </div>
+    </div>
+
+    <!-- Firebase SDK e script para cálculo financeiro -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyA6SVZnzC0OfMmEXoxgPnd9XFhqKDRYFgg",
+            authDomain: "thiago-2bafb.firebaseapp.com",
+            projectId: "thiago-2bafb",
+            storageBucket: "thiago-2bafb.appspot.com",
+            messagingSenderId: "768321589968",
+            appId: "1:768321589968:web:5ad525e227b5adec9e04d5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Formatação para moeda
+        const formatter = new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+        });
+
+        // Função para carregar e calcular dados financeiros
+        async function carregarDadosFinanceiros() {
+            let totalReceitas = 0;
+            let totalDespesas = 0;
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "transacoes"));
+                querySnapshot.forEach((doc) => {
+                    const transacao = doc.data();
+                    const valor = parseFloat(transacao.valor);
+
+                    if (isNaN(valor)) {
+                        console.warn("Valor inválido: ", transacao.valor);
+                        return;
+                    }
+
+                    if (transacao.tipo === "Entrada") {
+                        totalReceitas += valor;
+                    } else if (transacao.tipo === "Saida") {
+                        totalDespesas += valor;
+                    }
+                });
+
+                const totalSoma = totalReceitas - totalDespesas;
+
+                // Atualizando a exibição
+                document.getElementById("totalReceitas").textContent = formatter.format(totalReceitas);
+                document.getElementById("totalDespesas").textContent = formatter.format(totalDespesas);
+                document.getElementById("totalSoma").textContent = formatter.format(totalSoma);
+
+            } catch (error) {
+                console.error("Erro ao carregar dados financeiros: ", error);
+                alert("Erro ao carregar os dados financeiros.");
+            }
+        }
+
+        carregarDadosFinanceiros();
+    </script>
+
+</body>
+</html>
